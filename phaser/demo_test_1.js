@@ -68,9 +68,27 @@ function create() { // Función de creación de elementos
 function enRedNeural(){ // Función para entrenar la red neuronal
     nnEntrenamiento.train(datosEntrenamiento, {rate: 0.0003, iterations: 10000, shuffle: true}); // Entrenamiento de la red neuronal con los datos de entrenamiento
 }
-
+/*
 function datosDeEntrenamiento(param_entrada){ // Función para obtener los datos de entrenamiento
     console.log("Entrada",param_entrada[0]+" "+param_entrada[1]+" "+param_entrada[2]+" "+param_entrada[3]); // Registro de la entrada
+    nnSalida = nnNetwork.activate(param_entrada); // Activación de la red neuronal
+    var aire=Math.round( nnSalida[0]*100 ); // Cálculo del porcentaje de aire
+    var piso=Math.round( nnSalida[1]*100 ); // Cálculo del porcentaje de suelo
+    console.log("Valor ","En el Aire %: "+ aire + " En el suelo %: " + piso ); // Registro de los valores de salida
+    return nnSalida[0]>=nnSalida[1]; // Devolución del resultado de la red neuronal
+}
+*///bala 
+function datosDeEntrenamientoBala(param_entrada){ // Función para obtener los datos de entrenamiento
+    console.log("Entrada",param_entrada[0]+" "+param_entrada[1]); // Registro de la entrada
+    nnSalida = nnNetwork.activate(param_entrada); // Activación de la red neuronal
+    var aire=Math.round( nnSalida[0]*100 ); // Cálculo del porcentaje de aire
+    var piso=Math.round( nnSalida[1]*100 ); // Cálculo del porcentaje de suelo
+    console.log("Valor ","En el Aire %: "+ aire + " En el suelo %: " + piso ); // Registro de los valores de salida
+    return nnSalida[0]>=nnSalida[1]; // Devolución del resultado de la red neuronal
+}
+// bala superior
+function datosDeEntrenamientoBalaSuperior(param_entrada){ // Función para obtener los datos de entrenamiento
+    console.log("Entrada",param_entrada[2]+" "+param_entrada[3]); // Registro de la entrada
     nnSalida = nnNetwork.activate(param_entrada); // Activación de la red neuronal
     var aire=Math.round( nnSalida[0]*100 ); // Cálculo del porcentaje de aire
     var piso=Math.round( nnSalida[1]*100 ); // Cálculo del porcentaje de suelo
@@ -137,7 +155,7 @@ function moverIzquierda(){ // Función para el movimiento a la izquierda del jug
     jugador.body.velocity.x = -200; // Establecimiento de la velocidad horizontal del jugador para el movimiento a la izquierda
 }
 
-function update() { // Función de actualización del juego
+function update(){ // Función de actualización del juego
     fondo.tilePosition.x -= 1; // Desplazamiento del fondo
 
     juego.physics.arcade.collide(bala, jugador, colisionH, null, this); // Detección de colisión entre la bala y el jugador
@@ -166,13 +184,18 @@ function update() { // Función de actualización del juego
         moverIzquierda(); // Realización del movimiento a la izquierda
     }
 
-    if( modoAuto == true  && bala.position.x>0 && balaSuperior.position.x>0 && balaSuperior.position.y>0 && jugador.body.onFloor()) { // Verificación de si el modo automático está activado, la bala está en movimiento y el jugador está en el suelo
+    if( modoAuto == true  && bala.position.x>0 && jugador.body.onFloor()) { // Verificación de si el modo automático está activado, la bala está en movimiento y el jugador está en el suelo
 
-        if( datosDeEntrenamiento( [despBala ,despBalaSuperior , velocidadBala, velocidadBalaSuperior] )  ){ // Obtención de datos de entrenamiento y verificación de si debe saltar
-            moverDerecha(); // Realización del movimiento a la derecha
-        /*}else{// Verificación de si no debe saltar
+        if( datosDeEntrenamientoBala( [despBala , velocidadBala] )  ){ // Obtención de datos de entrenamiento y verificación de si debe saltar
             saltar(); // Realización del salto
-        }*/
+        }
+    }
+
+    if( modoAuto == true  && balaSuperior.position.x>0 && jugador.body.onFloor()) { // Verificación de si el modo automático está activado, la bala superior está en movimiento y el jugador está en el suelo
+
+        if( datosDeEntrenamientoBalaSuperior( [despBalaSuperior , velocidadBalaSuperior] )  ){ // Obtención de datos de entrenamiento y verificación de si debe saltar
+            moverDerecha(); // Realización del salto
+        }
     }
 
     if( balaD==false ){ // Verificación de si la bala está disparada
@@ -198,9 +221,10 @@ function update() { // Función de actualización del juego
                 'output':  [estatusAire , estatuSuelo ]  
         });
 
-        console.log("Desplazamiento Bala, Desplazamiento BalaSuperior Velocidad Bala, Velocidad BalaSuperior, Estatus, Estatus: ",
-            despBala + " " + despBalaSuperior + " " +velocidadBala + " " + velocidadBalaSuperior + " "+ estatusAire+" "+  estatuSuelo); // Registro de datos de entrenamiento
-   }
+        console.log("Desplazamiento Bala, Velocidad Bala, Desplazamiento BalaSuperior, Velocidad BalaSuperior, Estatus, Estatus: ",
+            despBala + " " + velocidadBala + " " + despBalaSuperior + " " + velocidadBalaSuperior + " "+ estatusAire+" "+  estatuSuelo); // Registro de datos de entrenamiento
+    }
+
 
 }
 
