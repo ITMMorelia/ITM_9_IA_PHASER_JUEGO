@@ -10,7 +10,11 @@ var moverI; // Variable para el control de movimiento a la izquierda
 var moverD; // Variable para el control de movimiento a la derecha
 var menu; // Variable para el menú
 var velocidadBala; // Variable para la velocidad de la bala
+var velocidadBalaSuperior; // Variable para la velocidad de la bala superior
+var velocidadBalaDSuperior; // Variable para la velocidad de la bala horizontal
 var despBala; // Variable para el desplazamiento de la bala
+var despBalaSuperior; // Variable para el desplazamiento de la bala superior
+var despBalaDSuperior; // Variable para el desplazamiento de la bala horizontal superior
 var estatusAire; // Variable para el estado de aire del jugador
 var estatuSuelo; // Variable para el estado del suelo del jugador
 var nnNetwork , nnEntrenamiento, nnSalida, datosEntrenamiento=[]; // Variables para la red neuronal
@@ -67,7 +71,7 @@ function create() { // Función de creación de elementos
     moverD = juego.input.keyboard.addKey(Phaser.Keyboard.RIGHT); // Asignación de la tecla de flecha derecha para el movimiento a la derecha
     moverI = juego.input.keyboard.addKey(Phaser.Keyboard.LEFT); // Asignación de la tecla de flecha izquierda para el movimiento a la izquierda
 
-    nnNetwork =  new synaptic.Architect.Perceptron(2, 6, 6, 2); // Creación de la red neuronal
+    nnNetwork =  new synaptic.Architect.Perceptron(6, 6, 6, 6); // Creación de la red neuronal
     nnEntrenamiento = new synaptic.Trainer(nnNetwork); // Creación del entrenador de la red neuronal
 }
 
@@ -161,8 +165,10 @@ function update() { // Función de actualización del juego
         estatuSuelo = 0; // Establecimiento del estado del suelo como falso
         estatusAire = 1; // Establecimiento del estado del aire como verdadero
     }
-	
-    despBala = Math.floor( jugador.position.x - bala.position.x ); // Cálculo del desplazamiento de la bala
+    
+    despBala = Math.floor(jugador.position.x - bala.position.x); // Cálculo del desplazamiento de la bala
+    despBalaSuperior = Math.floor(jugador.position.x - balaSuperior.position.x); // Cálculo del desplazamiento de la bala superior
+    despBalaDSuperior = Math.floor(jugador.position.x - balaHorizontal.position.x); // Cálculo del desplazamiento de la bala horizontal
 
     if( modoAuto==false && salto.isDown &&  jugador.body.onFloor() ){ // Verificación de si el modo automático está desactivado y se presionó la tecla de salto
         saltar(); // Realización del salto
@@ -183,6 +189,20 @@ function update() { // Función de actualización del juego
         }
     }
 
+    if( modoAuto == true  && balaSuperior.position.x>0 && jugador.body.onFloor()) { // Verificación de si el modo automático está activado, la bala superior está en movimiento y el jugador está en el suelo
+
+        if( datosDeEntrenamiento( [despBalaSuperior , velocidadBalaSuperior] )  ){ // Obtención de datos de entrenamiento y verificación de si debe saltar
+            saltar(); // Realización del salto
+        }
+    }
+
+    if( modoAuto == true  && balaHorizontal.position.y<h && jugador.body.onFloor()) { // Verificación de si el modo automático está activado, la bala horizontal está en movimiento y el jugador está en el suelo
+
+        if( datosDeEntrenamiento( [despBalaDSuperior , velocidadBalaDSuperior] )  ){ // Obtención de datos de entrenamiento y verificación de si debe saltar
+            saltar(); // Realización del salto
+        }
+    }
+
     if( balaD==false ){ // Verificación de si la bala está disparada
         disparo(); // Disparo de la bala
     }
@@ -199,7 +219,7 @@ function update() { // Función de actualización del juego
         resetVariables(); // Restablecimiento de variables
     }
 
-   if( balaSuperior.position.x <= 0  ){ // Verificación de si la bala superior ha salido de la pantalla
+    if( balaSuperior.position.x <= 0  ){ // Verificación de si la bala superior ha salido de la pantalla
         resetVariables(); // Restablecimiento de variables
     }
 
@@ -207,17 +227,27 @@ function update() { // Función de actualización del juego
         resetVariables(); // Restablecimiento de variables
     }
     if( modoAuto ==false  && bala.position.x > 0 ){ // Verificación de si el modo automático está desactivado y la bala está en movimiento
-
-        datosEntrenamiento.push({ // Agregación de datos de entrenamiento
+    
+        datosEntrenamiento.push({ // Agregación de datos de entrenamiento para la bala
                 'input' :  [despBala , velocidadBala],
                 'output':  [estatusAire , estatuSuelo ]  
         });
-
-        console.log("Desplazamiento Bala, Velocidad Bala, Estatus, Estatus: ",
-            despBala + " " +velocidadBala + " "+ estatusAire+" "+  estatuSuelo); // Registro de datos de entrenamiento
-   }
-
+    
+        datosEntrenamiento.push({ // Agregación de datos de entrenamiento para la bala superior
+                'input' :  [despBalaSuperior , velocidadBalaSuperior],
+                'output':  [estatusAire , estatuSuelo ]  
+        });
+    
+        datosEntrenamiento.push({ // Agregación de datos de entrenamiento para la bala horizontal
+                'input' :  [despBalaDSuperior , velocidadBalaDSuperior],
+                'output':  [estatusAire , estatuSuelo ]  
+        });
+    }
+    
+    console.log("Desplazamiento Bala, Velocidad Bala, Estatus, Estatus: ",
+        despBala + " " +velocidadBala + " "+ estatusAire+" "+  estatuSuelo); // Registro de datos de entrenamiento
 }
+
 
 function disparo(){ // Función para el disparo de la bala
     velocidadBala =  -1 * velocidadRandom(300,800); // Cálculo de la velocidad aleatoria de la bala
@@ -227,16 +257,16 @@ function disparo(){ // Función para el disparo de la bala
 }
 
 function disparoSuperior(){ // Función para el disparo de la bala superior
-    velocidadBala =  velocidadRandom(50,100); // Cálculo de la velocidad aleatoria de la bala superior
-    balaSuperior.body.velocity.y = velocidadBala ; // Establecimiento de la velocidad en y de la bala superior
+    velocidadBalaSuperior =  velocidadRandom(50,100); // Cálculo de la velocidad aleatoria de la bala superior
+    balaSuperior.body.velocity.y = velocidadBalaSuperior ; // Establecimiento de la velocidad en y de la bala superior
     balaSuperior.body.velocity.x = 0 ; // Establecimiento de la velocidad en x de la bala superior
     balaDSuperior=true; // Marcado de la bala superior como disparada
 }
 
 function disparoHorizontal(){ // Función para el disparo de la bala horizontal
-    velocidadBala = -1 * velocidadRandom(400,700); // Cálculo de la velocidad aleatoria de la bala horizontal
+    velocidadBalaDSuperior = -1 * velocidadRandom(400,700); // Cálculo de la velocidad aleatoria de la bala horizontal
     balaHorizontal.body.velocity.y = 0 ; // Establecimiento de la velocidad en y de la bala horizontal
-    balaHorizontal.body.velocity.x = velocidadBala ; // Establecimiento de la velocidad en x de la bala horizontal
+    balaHorizontal.body.velocity.x = velocidadBalaDSuperior ; // Establecimiento de la velocidad en x de la bala horizontal
     balaDHorizontal=true; // Marcado de la bala horizontal como disparada
 }
 
